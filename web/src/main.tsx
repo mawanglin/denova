@@ -1,3 +1,4 @@
+import '@/lib/random-uuid'
 import { lazy, StrictMode, Suspense, useEffect } from 'react'
 import { createRoot } from 'react-dom/client'
 import { QueryClientProvider } from '@tanstack/react-query'
