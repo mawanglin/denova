@@ -172,3 +172,27 @@ func TestRemoteAccessCorruptStoreFailsClosed(t *testing.T) {
 		t.Fatal("corrupt store was overwritten")
 	}
 }
+
+// Some hosting proxies forward to the loopback listener with a rewritten Host
+// and no X-Forwarded-* headers; browser fetch metadata still proves same origin.
+func TestRemoteAccessTrustsBrowserSameOriginBehindRewritingProxy(t *testing.T) {
+	_, h, _ := testRemoteAccess(t)
+	proxied := func(method, path string, headers ...ut.Header) int {
+		headers = append(headers, ut.Header{Key: "Host", Value: "127.0.0.1:8080"}, ut.Header{Key: "Referer", Value: "https://nas.example.net/"})
+		return ut.PerformRequest(h.Engine, method, path, nil, headers...).Code
+	}
+	if code := proxied("GET", "/api/auth/status", ut.Header{Key: "Sec-Fetch-Site", Value: "same-origin"}); code != 200 {
+		t.Fatalf("same-origin status behind proxy: %d", code)
+	}
+	if code := proxied("POST", "/api/private", ut.Header{Key: "Origin", Value: "https://nas.example.net"}, ut.Header{Key: "Sec-Fetch-Site", Value: "same-origin"}); code != 204 {
+		t.Fatalf("same-origin write behind proxy: %d", code)
+	}
+	if code := proxied("GET", "/api/terminal/sessions/one/attach", ut.Header{Key: "Origin", Value: "https://nas.example.net"}, ut.Header{Key: "Upgrade", Value: "websocket"}, ut.Header{Key: "Sec-Fetch-Site", Value: "same-origin"}); code != 200 {
+		t.Fatalf("same-origin socket behind proxy: %d", code)
+	}
+	for _, site := range []string{"", "cross-site", "same-site"} {
+		if code := proxied("POST", "/api/private", ut.Header{Key: "Origin", Value: "https://nas.example.net"}, ut.Header{Key: "Sec-Fetch-Site", Value: site}); code != 403 {
+			t.Fatalf("Sec-Fetch-Site %q accepted a mismatched origin: %d", site, code)
+		}
+	}
+}

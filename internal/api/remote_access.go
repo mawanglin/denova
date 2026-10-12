@@ -89,6 +89,11 @@ func sameOriginRequest(c *app.RequestContext) bool {
 	if origin == "" {
 		return true
 	}
+	// Pages cannot forge Sec-Fetch-Site. It stays correct when a hosting
+	// proxy rewrites Host without sending X-Forwarded-* headers.
+	if strings.EqualFold(string(c.GetHeader("Sec-Fetch-Site")), "same-origin") {
+		return true
+	}
 	parsed, err := url.Parse(origin)
 	if err != nil || (parsed.Scheme != "http" && parsed.Scheme != "https") {
 		return false

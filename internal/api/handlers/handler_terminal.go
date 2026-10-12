@@ -383,7 +383,7 @@ func writeTerminalError(ctx context.Context, c *hertzapp.RequestContext, err err
 // allowedTerminalOrigin permits same-origin requests plus the local dev frontend (Vite).
 func allowedTerminalOrigin(c *hertzapp.RequestContext) bool {
 	origin := strings.TrimSpace(string(c.Request.Header.Peek("Origin")))
-	if origin == "" {
+	if origin == "" || strings.EqualFold(string(c.Request.Header.Peek("Sec-Fetch-Site")), "same-origin") {
 		return true
 	}
 	host := strings.TrimSpace(string(c.Request.Header.Peek("Host")))
