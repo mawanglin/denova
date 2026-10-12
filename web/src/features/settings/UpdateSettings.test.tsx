@@ -1,7 +1,7 @@
-import { act, renderHook, waitFor } from '@testing-library/react'
+import { act, render, renderHook, screen, waitFor } from '@testing-library/react'
 import { expect, it, vi } from 'vitest'
 import { applyUpdate, getUpdateStatus, installUpdateStream } from './api'
-import { useUpdateSettings } from './UpdateSettings'
+import { UpdatePanel, useUpdateSettings } from './UpdateSettings'
 import { scheduleFrontendReloadAfterUpdate } from './update-reload'
 
 vi.mock('./api', () => ({
@@ -84,4 +84,14 @@ it('restores the staged package if the install stream loses its result', async (
   act(() => result.current.onInstall())
   await waitFor(() => expect(result.current.installResult).toMatchObject({ apply_ready: true, installed_version: '0.5.2' }))
   unmount()
+})
+
+it('hides in-app installation when the host package manager owns program files', async () => {
+  vi.mocked(getUpdateStatus).mockResolvedValueOnce({ phase: 'idle', current_version: '0.5.1', managed_by: 'fnos' })
+  const { result } = renderHook(() => useUpdateSettings({ autoCheckEnabled: false }))
+  await waitFor(() => expect(result.current.managedBy).toBe('fnos'))
+  render(<UpdatePanel {...result.current} />)
+  expect(screen.getByText(/fnOS/)).toBeTruthy()
+  expect(screen.queryByRole('button', { name: /安装|Install/ })).toBeNull()
+  expect(screen.queryByRole('button', { name: /手动|Manual/ })).toBeNull()
 })

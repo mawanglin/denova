@@ -22,6 +22,7 @@ export function useUpdateSettings({ autoCheckEnabled }: { autoCheckEnabled: bool
   const [updateInstallProgress, setUpdateInstallProgress] = useState<UpdateInstallProgress | null>(null)
   const [operation, setOperation] = useState<UpdateOperation>('checking')
   const [updateError, setUpdateError] = useState<string | null>(null)
+  const [managedBy, setManagedBy] = useState<string | undefined>(undefined)
   const cancelReload = useRef<(() => void) | undefined>(undefined)
   const monitorRestart = useCallback((target: { id: string; version: string }) => {
     cancelReload.current?.()
@@ -38,6 +39,7 @@ export function useUpdateSettings({ autoCheckEnabled }: { autoCheckEnabled: bool
   const syncUpdateStatus = useCallback(async (signal?: AbortSignal) => {
     const status = await getUpdateStatus(AbortSignal.any([AbortSignal.timeout(5000), ...(signal ? [signal] : [])]))
     if (signal?.aborted) return
+    setManagedBy(status.managed_by)
     setOperation('idle')
     setUpdateInstallResult(null)
     switch (status.phase) {
@@ -158,6 +160,7 @@ export function useUpdateSettings({ autoCheckEnabled }: { autoCheckEnabled: bool
     installProgress: updateInstallProgress,
     operation,
     error: updateError,
+    managedBy,
     onCheck: () => void runUpdateCheck(),
     onInstall: () => void runUpdateInstall(),
     onApply: () => void runUpdateApply(),
@@ -171,6 +174,7 @@ export function UpdatePanel({
   installProgress,
   operation,
   error,
+  managedBy,
   onCheck,
   onInstall,
   onApply,
@@ -245,6 +249,11 @@ export function UpdatePanel({
               {t('settings.updates.applyingRestart')}
             </div>
           )}
+          {managedBy && (
+            <div className="rounded-[var(--nova-radius)] border border-[var(--nova-border)] bg-[var(--nova-surface)] px-2.5 py-1.5 text-[var(--nova-text-muted)]">
+              {t('settings.updates.managedHint')}
+            </div>
+          )}
           {error && <InlineErrorNotice className="mt-2" message={error} title={t('settings.updates.error')} />}
         </div>
         <div className="flex shrink-0 flex-wrap gap-2">
@@ -268,7 +277,7 @@ export function UpdatePanel({
             <RefreshCw className={`h-3.5 w-3.5 ${checking ? 'animate-spin' : ''}`} />
             {checking ? t('settings.updates.checking') : t('settings.updates.check')}
           </button>
-          <button
+          {!managedBy && <button
             type="button"
             onClick={onInstall}
             disabled={installDisabled}
@@ -276,7 +285,7 @@ export function UpdatePanel({
           >
             {installing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
             {installing ? t('settings.updates.installing') : t('settings.updates.install')}
-          </button>
+          </button>}
           {applyReady && (
             <button
               type="button"
@@ -290,7 +299,7 @@ export function UpdatePanel({
           )}
         </div>
       </div>
-      <Collapsible className="mt-3">
+      {!managedBy && <Collapsible className="mt-3">
         <CollapsibleTrigger asChild>
           <Button variant="ghost" size="sm" className="group w-full justify-start">
             <ChevronDown data-icon="inline-start" className="transition-transform group-data-[state=open]:rotate-180" />
@@ -327,7 +336,7 @@ export function UpdatePanel({
             </div>
           </div>
         </CollapsibleContent>
-      </Collapsible>
+      </Collapsible>}
     </div>
   )
 }

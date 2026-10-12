@@ -1,0 +1,41 @@
+[
+  {
+    "stepTitle": "Denova 基础设置",
+    "items": [
+      {
+        "type": "tips",
+        "helpText": "Denova 通过 NAS 局域网地址访问，需要登录账号保护。创作数据保存在共享文件夹「denova」中，卸载应用不会删除。安装后在 Denova 设置中配置模型 API。"
+      },
+      {
+        "type": "text",
+        "field": "wizard_port",
+        "label": "服务端口",
+        "initValue": "18080",
+        "helpText": "1024-65535，安装后不可在应用设置中修改",
+        "rules": [
+          { "required": true, "message": "请输入端口" },
+          { "pattern": "^[0-9]{4,5}$", "message": "请输入 1024-65535 之间的端口" }
+        ]
+      },
+      {
+        "type": "text",
+        "field": "wizard_username",
+        "label": "登录用户名",
+        "initValue": "admin",
+        "rules": [
+          { "required": true, "message": "请输入用户名" }
+        ]
+      },
+      {
+        "type": "password",
+        "field": "wizard_password",
+        "label": "登录密码",
+        "initValue": "",
+        "rules": [
+          { "required": true, "message": "请输入密码" },
+          { "pattern": "^\\S{6,}$", "message": "密码至少 6 位且不含空白字符" }
+        ]
+      }
+    ]
+  }
+]

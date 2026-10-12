@@ -27,6 +27,7 @@ type Service struct {
 	httpClient     *http.Client
 	executablePath string
 	githubAPIBase  string
+	installManager string
 }
 
 func NewService() *Service {
@@ -37,6 +38,7 @@ func NewService() *Service {
 		httpClient:     nil,
 		executablePath: exe,
 		githubAPIBase:  githubAPIBase,
+		installManager: buildinfo.InstallManager,
 	}
 }
 
@@ -58,7 +60,8 @@ func (s *Service) checkRelease(release githubRelease) CheckResult {
 		CurrentVersion:  current,
 		LatestVersion:   latest,
 		UpdateAvailable: updateAvailable,
-		CanInstall:      updateAvailable && asset != nil && selectChecksumAsset(release.Assets) != nil,
+		CanInstall:      updateAvailable && asset != nil && selectChecksumAsset(release.Assets) != nil && s.installManager == "",
+		ManagedBy:       s.installManager,
 		Platform:        platform,
 		ReleaseURL:      release.HTMLURL,
 		PublishedAt:     release.PublishedAt,

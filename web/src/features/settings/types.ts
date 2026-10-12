@@ -634,6 +634,8 @@ export interface UpdateCheckResult {
   latest_version: string
   update_available: boolean
   can_install: boolean
+  /** Host package manager that owns program files; in-app installation is unavailable. */
+  managed_by?: string
   platform: string
   release_url: string
   published_at: string
@@ -677,6 +679,7 @@ export interface UpdateStatus {
   phase: 'idle' | 'staged' | 'waiting' | 'backing_up' | 'applying' | 'starting' | 'rolling_back' | 'succeeded' | 'failed'
   error?: string
   log_path?: string
+  managed_by?: string
 }
 
 /** Display-only arrangement; does not change the saved scene or Agent choices. */

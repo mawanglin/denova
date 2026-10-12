@@ -1,0 +1,23 @@
+#!/bin/bash
+# After installation: record port and data directory, then enable LAN access
+# with the wizard credentials so the fnOS desktop entry can reach Denova.
+. "$(dirname "$0")/functions"
+
+port="${wizard_port:-}"
+# Upgrades may run without the install wizard; keep the existing configuration.
+if [ -z "${port}" ] && [ -f "${SETTINGS_FILE}" ]; then
+  exit 0
+fi
+if ! valid_port "${port}"; then
+  user_error "端口无效：${port}，请输入 1024-65535 之间的端口。"
+  exit 1
+fi
+data_dir="$(default_data_dir)"
+if ! mkdir -p "${data_dir}"; then
+  user_error "无法创建 Denova 数据目录：${data_dir}"
+  exit 1
+fi
+save_settings "${port}" "${data_dir}"
+apply_credentials "${data_dir}" "${wizard_username:-}" "${wizard_password:-}" || exit 1
+log "installed ${TRIM_APPVER:-} data=${data_dir} port=${port}"
+exit 0

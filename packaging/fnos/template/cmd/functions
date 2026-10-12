@@ -1,0 +1,133 @@
+#!/bin/bash
+# Shared helpers for the Denova fnOS package, sourced by the other cmd scripts.
+# Only depends on the TRIM_* variables injected by fnOS.
+
+APP_DIR="${TRIM_APPDEST}"
+ETC_DIR="${TRIM_PKGETC}"
+VAR_DIR="${TRIM_PKGVAR}"
+SETTINGS_FILE="${ETC_DIR}/settings.env"
+LOG_DIR="${VAR_DIR}/logs"
+LOG_FILE="${LOG_DIR}/denova.log"
+PID_FILE="${VAR_DIR}/denova.pid"
+# Agent runtimes, Skills and terminal sessions resolve user files under HOME;
+# the package user has no writable home of its own.
+HOME_DIR="${VAR_DIR}/home"
+SETUP_BIN="${APP_DIR}/bin/denova-fnos-setup"
+
+log() {
+  mkdir -p "${LOG_DIR}" 2>/dev/null
+  echo "$(date '+%F %T') [fnos] $*" >> "${LOG_FILE}" 2>/dev/null
+}
+
+# user_error shows the message in the fnOS app center when a lifecycle step fails.
+user_error() {
+  log "ERROR: $*"
+  [ -n "${TRIM_TEMP_LOGFILE:-}" ] && echo "$*" >> "${TRIM_TEMP_LOGFILE}"
+  echo "$*" >&2
+}
+
+valid_port() {
+  [[ "$1" =~ ^[0-9]+$ ]] && [ "$1" -ge 1024 ] && [ "$1" -le 65535 ]
+}
+
+load_settings() {
+  # shellcheck disable=SC1090
+  [ -f "${SETTINGS_FILE}" ] && . "${SETTINGS_FILE}"
+  if ! valid_port "${DENOVA_PORT:-}" || [ -z "${DENOVA_DATA_DIR:-}" ]; then
+    user_error "Denova 配置缺失或无效（${SETTINGS_FILE}），请重新安装应用。"
+    return 1
+  fi
+}
+
+# save_settings records the port and data directory chosen at install time.
+# The data directory is fixed here so later runs never silently switch to an
+# empty location when the data share is temporarily unavailable.
+save_settings() {
+  local port="$1" data_dir="$2" tmp="${SETTINGS_FILE}.tmp"
+  mkdir -p "${ETC_DIR}"
+  printf 'DENOVA_PORT=%q\nDENOVA_DATA_DIR=%q\n' "${port}" "${data_dir}" > "${tmp}"
+  chmod 600 "${tmp}"
+  mv -f "${tmp}" "${SETTINGS_FILE}"
+}
+
+default_data_dir() {
+  local share="${TRIM_DATA_SHARE_PATHS%%:*}"
+  echo "${share:-${VAR_DIR}/data}"
+}
+
+# apply_credentials writes LAN access and login credentials into the Denova user
+# configuration. A blank password keeps the existing one.
+apply_credentials() {
+  local data_dir="$1" username="$2" password="$3" err
+  if ! err="$(printf '%s\n' "${password}" | "${SETUP_BIN}" remote-access --data-dir "${data_dir}" --username "${username}" 2>&1)"; then
+    user_error "写入 Denova 登录设置失败：${err}"
+    return 1
+  fi
+  log "remote access settings updated"
+}
+
+is_running() {
+  local pid
+  [ -f "${PID_FILE}" ] || return 1
+  pid="$(head -n 1 "${PID_FILE}" | tr -d '[:space:]')"
+  [ -n "${pid}" ] && kill -0 "${pid}" 2>/dev/null
+}
+
+port_open() {
+  (exec 3<>"/dev/tcp/127.0.0.1/$1") 2>/dev/null
+}
+
+start_app() {
+  local pid
+  is_running && return 0
+  load_settings || return 1
+  if port_open "${DENOVA_PORT}"; then
+    user_error "端口 ${DENOVA_PORT} 已被其他程序占用，请释放该端口后再启动 Denova。"
+    return 1
+  fi
+  if [ ! -d "${DENOVA_DATA_DIR}" ]; then
+    user_error "Denova 数据目录不存在：${DENOVA_DATA_DIR}。请确认共享文件夹可用。"
+    return 1
+  fi
+  mkdir -p "${LOG_DIR}" "${HOME_DIR}"
+  cd "${APP_DIR}" || return 1
+  # setsid gives the server its own process group so stop can also reach
+  # terminal and Agent child processes.
+  HOME="${HOME_DIR}" DENOVA_DIR="${DENOVA_DATA_DIR}" \
+    setsid "${APP_DIR}/denova" --no-open --port "${DENOVA_PORT}" >> "${LOG_FILE}" 2>&1 < /dev/null &
+  pid=$!
+  echo "${pid}" > "${PID_FILE}"
+  log "started pid=${pid} port=${DENOVA_PORT}"
+  # Startup may run data migrations; report early exits instead of a false success.
+  for _ in $(seq 1 90); do
+    if ! kill -0 "${pid}" 2>/dev/null; then
+      rm -f "${PID_FILE}"
+      user_error "Denova 启动失败：$(tail -n 5 "${LOG_FILE}" 2>/dev/null | tr '\n' ' ')"
+      return 1
+    fi
+    port_open "${DENOVA_PORT}" && return 0
+    sleep 1
+  done
+  log "port ${DENOVA_PORT} not ready after 90s; server is still starting"
+  return 0
+}
+
+stop_app() {
+  local pid
+  if ! is_running; then
+    rm -f "${PID_FILE}"
+    return 0
+  fi
+  pid="$(head -n 1 "${PID_FILE}" | tr -d '[:space:]')"
+  kill -TERM "${pid}" 2>/dev/null
+  for _ in $(seq 1 30); do
+    kill -0 "${pid}" 2>/dev/null || break
+    sleep 1
+  done
+  if kill -0 "${pid}" 2>/dev/null; then
+    log "pid ${pid} did not exit within 30s, killing process group"
+    kill -KILL -- "-${pid}" 2>/dev/null || kill -KILL "${pid}" 2>/dev/null
+  fi
+  rm -f "${PID_FILE}"
+  log "stopped pid=${pid}"
+}

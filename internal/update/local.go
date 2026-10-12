@@ -22,6 +22,7 @@ var (
 	ErrPackageVersion  = errors.New("release package must be newer than the running release")
 	ErrPackageTooLarge = errors.New("release package exceeds the size limit")
 	ErrUpdateBusy      = errors.New("another update operation is in progress")
+	ErrManagedInstall  = errors.New("program files are managed by the host package manager")
 	updateOperation    sync.Mutex
 	archiveNamePattern = regexp.MustCompile(`^denova-v?([0-9]+\.[0-9]+\.[0-9]+)-(darwin|linux|windows)-(x64|arm64)\.(zip|tar\.gz)$`)
 )
@@ -31,6 +32,9 @@ var (
 // release filename; callers must supply the original archive without renaming.
 // The caller owns archive. Applying remains a separate explicit action.
 func (s *Service) InstallLocal(ctx context.Context, name string, archive io.Reader) (InstallResult, error) {
+	if s.installManager != "" {
+		return InstallResult{}, ErrManagedInstall
+	}
 	if !updateOperation.TryLock() {
 		return InstallResult{}, ErrUpdateBusy
 	}

@@ -27,7 +27,8 @@ func (h *Handlers) HandleUpdateInstall(ctx context.Context, c *app.RequestContex
 	result, err := h.app.InstallUpdate(ctx)
 	if err != nil {
 		slog.ErrorContext(ctx, "[handlers/handler_update.go] update install failed", "error", err)
-		writeErrorKey(c, consts.StatusBadGateway, "api.update.installFailed", "detail", err.Error())
+		status, key := updateFailureKey(err, "api.update.installFailed")
+		writeErrorKey(c, status, key, "detail", err.Error())
 		return
 	}
 	writeJSON(c, consts.StatusOK, result)
@@ -37,7 +38,8 @@ func (h *Handlers) HandleUpdateApply(ctx context.Context, c *app.RequestContext)
 	result, err := h.app.ApplyUpdate(ctx)
 	if err != nil {
 		slog.ErrorContext(ctx, "[handlers/handler_update.go] update apply failed", "error", err)
-		writeErrorKey(c, consts.StatusBadGateway, "api.update.applyFailed", "detail", err.Error())
+		status, key := updateFailureKey(err, "api.update.applyFailed")
+		writeErrorKey(c, status, key, "detail", err.Error())
 		return
 	}
 	writeJSON(c, consts.StatusOK, result)
@@ -79,6 +81,8 @@ func (h *Handlers) HandleUpdateUpload(ctx context.Context, c *app.RequestContext
 			status, key = consts.StatusRequestEntityTooLarge, "api.update.tooLarge"
 		case errors.Is(err, update.ErrUpdateBusy):
 			status, key = consts.StatusConflict, "api.update.busy"
+		case errors.Is(err, update.ErrManagedInstall):
+			status, key = consts.StatusConflict, "api.update.managed"
 		case errors.Is(err, update.ErrInvalidPackage):
 		default:
 			status, key = consts.StatusInternalServerError, "api.update.installFailed"
@@ -87,6 +91,15 @@ func (h *Handlers) HandleUpdateUpload(ctx context.Context, c *app.RequestContext
 		return
 	}
 	writeJSON(c, consts.StatusOK, result)
+}
+
+// updateFailureKey keeps host-managed installations distinguishable from
+// transient download or apply failures.
+func updateFailureKey(err error, fallback string) (int, string) {
+	if errors.Is(err, update.ErrManagedInstall) {
+		return consts.StatusConflict, "api.update.managed"
+	}
+	return consts.StatusBadGateway, fallback
 }
 
 func (h *Handlers) HandleUpdateStatus(ctx context.Context, c *app.RequestContext) {

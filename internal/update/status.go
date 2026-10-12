@@ -34,10 +34,11 @@ type Status struct {
 	Phase          Phase  `json:"phase"`
 	Error          string `json:"error,omitempty"`
 	LogPath        string `json:"log_path,omitempty"`
+	ManagedBy      string `json:"managed_by,omitempty"`
 }
 
 func (s *Service) Status() (Status, error) {
-	status := Status{CurrentVersion: s.currentVersion, Phase: "idle"}
+	status := Status{CurrentVersion: s.currentVersion, Phase: "idle", ManagedBy: s.installManager}
 	path, err := readPendingManifestRef(updateDataDir(filepath.Dir(s.executablePath)))
 	if errors.Is(err, os.ErrNotExist) {
 		return status, nil

@@ -1,0 +1,11 @@
+#!/bin/bash
+# fnOS lifecycle entry: start | stop | status
+. "$(dirname "$0")/functions"
+
+case "${1:-}" in
+  start)  start_app || exit 1 ;;
+  stop)   stop_app ;;
+  status) is_running && exit 0 || exit 3 ;;
+  *)      echo "usage: $0 {start|stop|status}" >&2; exit 1 ;;
+esac
+exit 0

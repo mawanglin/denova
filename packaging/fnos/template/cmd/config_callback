@@ -1,0 +1,15 @@
+#!/bin/bash
+# After the settings wizard: update login credentials; blank fields keep the
+# current values. Restart a running server so it reloads the configuration.
+. "$(dirname "$0")/functions"
+
+load_settings || exit 1
+if [ -z "${wizard_username:-}" ] && [ -z "${wizard_password:-}" ]; then
+  exit 0
+fi
+apply_credentials "${DENOVA_DATA_DIR}" "${wizard_username:-}" "${wizard_password:-}" || exit 1
+if is_running; then
+  stop_app
+  start_app || exit 1
+fi
+exit 0

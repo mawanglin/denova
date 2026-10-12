@@ -62,6 +62,7 @@ const settings = {
   'settings.appearance.language': 'Interface Language',
   'settings.appearance.theme': 'Theme',
   'settings.updates.manual': 'Manual update',
+  'settings.updates.managedHint': 'This installation is managed by the system app center (such as fnOS). Upgrade Denova from the app center.',
   'settings.updates.manualHint': 'If automatic download is slow, download the newer release archive for this computer from GitHub, then select it here without extracting or renaming it (up to 512 MiB). Validation works offline; restart and install when ready.',
   'settings.updates.selectPackage': 'Select release archive',
   'settings.updates.uploading': 'Uploading and validating',

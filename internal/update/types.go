@@ -14,6 +14,7 @@ type CheckResult struct {
 	LatestVersion   string    `json:"latest_version"`
 	UpdateAvailable bool      `json:"update_available"`
 	CanInstall      bool      `json:"can_install"`
+	ManagedBy       string    `json:"managed_by,omitempty"`
 	Platform        string    `json:"platform"`
 	ReleaseURL      string    `json:"release_url"`
 	PublishedAt     time.Time `json:"published_at"`

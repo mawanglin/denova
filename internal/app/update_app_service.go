@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"errors"
 	"io"
 	"log/slog"
 
@@ -38,7 +39,11 @@ func (a *App) StartInstallUpdateTask(locale string) *apptask.Task {
 		})
 		if err != nil {
 			slog.ErrorContext(ctx, "[app/update_app_service.go] update installation failed", "error", err)
-			emit(agentrun.Event{Type: "error", Data: map[string]any{"message": i18n.New(locale).T("api.update.installFailed"), "code": "api.update.installFailed", "details": map[string]any{"operation": "update.install", "detail": observability.ErrorCause(err)}}})
+			code := "api.update.installFailed"
+			if errors.Is(err, update.ErrManagedInstall) {
+				code = "api.update.managed"
+			}
+			emit(agentrun.Event{Type: "error", Data: map[string]any{"message": i18n.New(locale).T(code), "code": code, "details": map[string]any{"operation": "update.install", "detail": observability.ErrorCause(err)}}})
 			return
 		}
 		emit(agentrun.Event{Type: "update_result", Data: result})

@@ -1,0 +1,16 @@
+#!/bin/bash
+# Before upgrade: stop the old server. This script comes from the new package
+# while TRIM_APPDEST still holds the old files, so it stays self-contained.
+# Denova backs up user data itself before running format migrations.
+PID_FILE="${TRIM_PKGVAR}/denova.pid"
+pid="$(head -n 1 "${PID_FILE}" 2>/dev/null | tr -d '[:space:]')"
+if [ -n "${pid}" ] && kill -0 "${pid}" 2>/dev/null; then
+  kill -TERM "${pid}" 2>/dev/null
+  for _ in $(seq 1 30); do
+    kill -0 "${pid}" 2>/dev/null || break
+    sleep 1
+  done
+  kill -0 "${pid}" 2>/dev/null && { kill -KILL -- "-${pid}" 2>/dev/null || kill -KILL "${pid}" 2>/dev/null; }
+fi
+rm -f "${PID_FILE}"
+exit 0

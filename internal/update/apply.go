@@ -94,6 +94,9 @@ func (s ApplyScheduler) Schedule(ctx context.Context) error {
 }
 
 func (s *Service) Apply(ctx context.Context, shutdown func(), port int) (ApplyResult, error) {
+	if s.installManager != "" {
+		return ApplyResult{}, ErrManagedInstall
+	}
 	if !updateOperation.TryLock() {
 		return ApplyResult{}, ErrUpdateBusy
 	}

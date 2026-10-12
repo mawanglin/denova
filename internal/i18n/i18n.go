@@ -145,6 +145,7 @@ var catalogZH = map[string]string{
 	"api.update.wrongPlatform":  "安装包与当前电脑的操作系统或处理器架构不匹配。",
 	"api.update.tooLarge":       "安装包不能超过 512 MiB。",
 	"api.update.busy":           "另一个更新操作正在进行，请稍后重试。",
+	"api.update.managed":        "当前安装由系统应用中心管理，请在应用中心中升级 Denova。",
 
 	"api.update.checkFailed":                     "检查更新失败，请稍后重试。详细原因请查看服务端日志。",
 	"api.update.installFailed":                   "安装更新失败，请重试或从 GitHub Releases 手动下载安装包。详细原因请查看服务端日志。",
@@ -379,6 +380,7 @@ var catalogEN = map[string]string{
 	"api.update.wrongPlatform":  "The package does not match this computer’s operating system or processor architecture.",
 	"api.update.tooLarge":       "The release archive must be 512 MiB or smaller.",
 	"api.update.busy":           "Another update operation is in progress. Try again later.",
+	"api.update.managed":        "This installation is managed by the system app center. Upgrade Denova from the app center.",
 
 	"api.update.checkFailed":                     "Could not check for updates. Try again later; see server logs for details.",
 	"api.update.installFailed":                   "Could not install the update. Retry or download the archive from GitHub Releases; see server logs for details.",

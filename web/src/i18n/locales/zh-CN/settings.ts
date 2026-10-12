@@ -62,6 +62,7 @@ const settings = {
   'settings.appearance.language': '界面语言',
   'settings.appearance.theme': '主题',
   'settings.updates.manual': '手动更新',
+  'settings.updates.managedHint': '当前安装由系统应用中心（如飞牛 fnOS）管理，请在应用中心中升级 Denova。',
   'settings.updates.manualHint': '自动下载较慢时，可从 GitHub 下载适合当前电脑的新版本压缩包，再在此选择，无需解压或重命名（最大 512 MiB）。校验无需联网，通过后点击“重启并安装”。',
   'settings.updates.selectPackage': '选择安装包',
   'settings.updates.uploading': '正在上传并校验',

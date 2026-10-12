@@ -1,0 +1,30 @@
+[
+  {
+    "stepTitle": "Denova 登录账号",
+    "items": [
+      {
+        "type": "tips",
+        "helpText": "留空的项保持当前设置不变。也可以在 Denova 设置中修改远程访问账号。"
+      },
+      {
+        "type": "text",
+        "field": "wizard_username",
+        "label": "登录用户名",
+        "initValue": "",
+        "rules": [
+          { "required": false }
+        ]
+      },
+      {
+        "type": "password",
+        "field": "wizard_password",
+        "label": "新登录密码",
+        "initValue": "",
+        "rules": [
+          { "required": false },
+          { "pattern": "^(\\S{6,})?$", "message": "密码至少 6 位且不含空白字符" }
+        ]
+      }
+    ]
+  }
+]

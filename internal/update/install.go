@@ -18,6 +18,9 @@ func (s *Service) Install(ctx context.Context) (InstallResult, error) {
 }
 
 func (s *Service) InstallWithProgress(ctx context.Context, progress func(InstallProgress)) (InstallResult, error) {
+	if s.installManager != "" {
+		return InstallResult{}, ErrManagedInstall
+	}
 	if !updateOperation.TryLock() {
 		return InstallResult{}, ErrUpdateBusy
 	}

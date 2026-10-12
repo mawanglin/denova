@@ -1,0 +1,16 @@
+appname=denova
+version=@VERSION@
+display_name=Denova
+desc=面向小说写作与 AI 角色扮演游戏的一体化 AI 创作平台，内置 AI Agents、Skills、自动化、图像生成与项目版本管理。原生运行，无需 Docker。
+platform=@PLATFORM@
+source=thirdparty
+maintainer=alfredxw
+maintainer_url=https://github.com/alfredxw/denova
+distributor=mawanglin
+distributor_url=https://github.com/mawanglin/denova
+desktop_uidir=ui
+desktop_applaunchname=denova.Application
+# The wizard port is checked by cmd/main so a conflict reports a readable reason.
+checkport=false
+ctl_stop=true
+changelog=@CHANGELOG@
